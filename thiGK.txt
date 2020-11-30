@@ -1,0 +1,220 @@
+===DatabaseHelper===
+public class DatabaseHelper extends SQLiteOpenHelper {
+    public DatabaseHelper(@Nullable Context context) {
+        super(context, "QLSach.sqlite", null,1 );
+    }
+
+    @Override
+    public void onCreate(SQLiteDatabase db) {
+        db.execSQL("CREATE TABLE Author(authorID Integer  primary key AUTOINCREMENT," +
+                "authorName text,email text,adress text)");
+        db.execSQL("CREATE TABLE Book(bookID integer primary key," +
+                "title text,authorID integer not null " +
+                "constraint authorID references Author(authorID)" +
+                "ON DELETE CASCADE ON UPDATE CASCADE)");
+    }
+//AUTOINCREMENT
+    @Override
+    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+       db.execSQL("DROP TABLE IF EXISTS Author");
+        db.execSQL("DROP TABLE IF EXISTS Book");
+          onCreate(db);
+    }
+    public int insertAuthor(Author author)
+    {
+        SQLiteDatabase database=this.getWritableDatabase();
+        ContentValues contentValues=new ContentValues();
+       contentValues.put("authorID",author.getAuthorID());
+        contentValues.put("authorName",author.getAuthorName());
+        contentValues.put("email",author.getEmail());
+        contentValues.put("adress",author.getAdress());
+        int result= (int) database.insert("Author",null,contentValues);
+        database.close();
+        return  result;
+    }
+
+    public int updateAuthor(Author author)
+    {
+        SQLiteDatabase database=this.getWritableDatabase();
+        ContentValues contentValues=new ContentValues();
+
+        contentValues.put("authorName",author.getAuthorName());
+        contentValues.put("email",author.getEmail());
+        contentValues.put("adress",author.getAdress());
+        int result= (int) database.update("Author",contentValues,
+                "authorID="+author.getAuthorID(),null);
+        database.close();
+        return  result;
+    }
+    public int deleteAuthor(int authorID)
+    {
+        SQLiteDatabase database=this.getWritableDatabase();
+
+        int result= (int) database.delete("Author",
+                "authorID="+authorID,null);
+        database.close();
+        return  result;
+    }
+
+    public ArrayList<Author> getAllAuthor()
+    {
+        ArrayList<Author> listAuthor=new ArrayList<>();
+        SQLiteDatabase db=this.getReadableDatabase();
+        Cursor cursor=db.rawQuery("select * from Author",null);
+        if(cursor!=null)
+            cursor.moveToFirst();
+        while (cursor.isAfterLast()==false)
+        {
+            listAuthor.add(new Author(cursor.getInt(0),
+                    cursor.getString(1),
+                    cursor.getString(2),
+                    cursor.getString(3)));
+            cursor.moveToNext();
+        }
+        cursor.close();
+        db.close();
+        return  listAuthor;
+    }
+    public ArrayList<Author> getAuthorByID(int id)
+    {
+        ArrayList<Author> listAuthor=new ArrayList<>();
+        SQLiteDatabase db=this.getReadableDatabase();
+        Cursor cursor=db.rawQuery("select * from Author where authorID="+id,null);
+        if(cursor!=null)
+            cursor.moveToFirst();
+        while (cursor.isAfterLast()==false)
+        {
+            listAuthor.add(new Author(cursor.getInt(0),
+                    cursor.getString(1),
+                    cursor.getString(2),
+                    cursor.getString(3)));
+            cursor.moveToNext();
+        }
+        cursor.close();
+        db.close();
+        return  listAuthor;
+    }
+}
+=====Main----------
+
+ //   themAuthor();
+        LoadToListView(lvw,db.getAllAuthor());
+
+        bt_Thoa.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                AlertDialog.Builder aler=new AlertDialog.Builder(MainActivity.this);
+                aler.setTitle("");
+                aler.setMessage("Bạn Có muốn thoát không?");
+                aler.setPositiveButton("yes", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        finish();
+                    }
+                });
+                aler.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+
+                    }
+                });
+                aler.create().show();
+            }
+        });
+
+        bt_Xoa.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                db.deleteAuthor(Integer.parseInt(ed_id.getText().toString()));
+                LoadToListView(lvw,db.getAllAuthor());
+            }
+        });
+
+        bt_Them.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Author author=new Author();
+                author.setAuthorID(Integer.parseInt(ed_id.getText().toString()));
+                author.setAuthorName(ed_name.getText().toString());
+                author.setEmail(ed_email.getText().toString());
+                author.setAdress(ed_adress.getText().toString());
+
+               if(db.insertAuthor(author)>0)
+               {
+                   LoadToListView(lvw,db.getAllAuthor());
+               }
+               else
+                   Toast.makeText(MainActivity.this,"Bị trùng mã",Toast.LENGTH_LONG).show();
+
+            }
+        });
+        bt_Sua.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Author author=new Author();
+                author.setAuthorID(Integer.parseInt(ed_id.getText().toString()));
+                author.setAuthorName(ed_name.getText().toString());
+                author.setEmail(ed_email.getText().toString());
+                author.setAdress(ed_adress.getText().toString());
+                db.updateAuthor(author);
+                LoadToListView(lvw,db.getAllAuthor());
+
+            }
+        });
+
+
+
+    } // Kết thúc onCreate
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu,menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        switch (item.getItemId()){
+            case R.id.btThem:
+                Toast.makeText(MainActivity.this,"Bị trùng mã",Toast.LENGTH_LONG).show();
+                return true;
+            case R.id.btXoa:
+                return true;
+            default:
+            return super.onOptionsItemSelected(item);
+        }
+
+    }
+
+    private void themAuthor()
+    {
+        Author author1=new Author(1,"Nam Cao","abc@gmail.com","Hà Nội");
+        Author author2=new Author(2,"Tố Hữu","efc@gmail.com","Hồ Chí Minh");
+       db.insertAuthor(author1);
+
+        db.insertAuthor(author2);
+    }
+
+    private void LoadToListView(ListView lvw, ArrayList<Author> ls)
+    {
+
+        final ArrayAdapter<Author> authorArrayAdapter=new ArrayAdapter<Author>(this,android.R.layout.simple_list_item_1,ls);
+        lvw.setAdapter(authorArrayAdapter);
+        lvw.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
+             Author a=(Author)authorArrayAdapter.getItem(position);
+
+                loadToField(a);
+            }
+        });
+    }
+    private void loadToField(Author author)
+    {
+        ed_id.setText(String.valueOf(author.getAuthorID()));
+        ed_name.setText(author.getAuthorName());
+        ed_email.setText(author.getEmail());
+        ed_adress.setText(author.getAdress());
+    }
+
